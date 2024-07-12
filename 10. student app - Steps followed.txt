@@ -1,0 +1,288 @@
+========================================================== Design ==========================================================
+
+1. Create a DynamoDB table student with student_id as Partition key and class as Sort key.
+   Other columns can be test1_score, test2_score, test3_score, test4_score, test5_score and avg_score.
+   avg_score is a calculated field.
+
+2. The API POST function will send input like:
+   {
+     "student_id": 1,
+     "class": 10,
+     "test1_score": 460,
+     "test2_score": 470,
+     "test3_score": 480,
+     "test4_score": 440,
+     "test5_score": 490
+   }
+
+3. The lambda function should calculate the average and load into dynamo_db.
+
+4. The API / lambda GET student_id function should retrieve a student's all scores.
+
+5. The API / lambda GET class function should retrieve a class's all scores + class average score. The lambda should sum up all students scores in the class & divide by number of students.
+
+============== Angular ==================
+
+Front Page should have username text / password text / login button.
+
+For now, dont validate username, password. Just take to the next page which has 3 buttons - Add Student scores, Get student scores, Get class scores.
+
+Add Student scores: should give a form that can acccept student_id, class and scores. Provide a alert when student is added successfully, else alert if student addition failed.
+
+Get student scores: should give a form that accepts student_id and displays the student's scores in a tabular format.
+
+Get class scores: should give a form that accepts class and displays the class's scores in a tabular format + avg class score.
+
+========================================================== Development ==========================================================
+
+======================================================== App Tier + DB Tier ======================================================
+
+Create an API student.
+
+Created 1 SQS queues - student-post-queue. Changed the visibilty timeout to 10 minutes.
+SQS queues for GET methods does not make sense because the final lambda function that will come after the SQS queue cannot return result to API Gateway and then Frontend.
+
+Created 3 lambda functions - student-post-function, student-get-function and class-get-function. 
+Changed the timeout to 5 minutes.
+
+Under the ROOT resource, create a POST method pointing to SQS queue student-post-queue created above.
+
+Under the ROOT resource, create a {student} resource with a GET method underneath pointing to lambda function student-get-function created above.
+
+One resource does not allow 2 variable resources, so this is not possible:
+Under the ROOT resource, create a {class} resource with a GET method underneath pointing to lambda function class-get-function created above.
+So, Under the ROOT resource, create a class resource and a {class} resource under class, with a GET method underneath pointing to lambda function class-get-function created above.
+
+Add the student-post-queue as trigger to student-post-function.
+Before this, make sure to modify the lambda function role to have required SQS access.
+
+Now, time to test if POST message reaches lambda from API gateway.
+Since the Integration point for the API Gateway is an SQS queue and not a lambda function, in the Integration Request section -> URL request headers parameters:
+Add Name = 'Content-Type', Mapped From = 'application/x-www-form-urlencoded'
+Also, in the Mapping Templates, use application/json = Action=SendMessage&MessageBody=$input.body.
+From student API -> POST method -> send below message and see if it reaches queue and lambda gets triggered.
+{
+   "student_id": 1,
+   "class": 10,
+   "test1_score": 460,
+   "test2_score": 470,
+   "test3_score": 480,
+   "test4_score": 440,
+   "test5_score": 490
+}
+Once lambda gets triggered, parse out the message from event and using boto3, insert message into dynamodb table.
+Make sure lambda has permission to write into dynamdb.
+
+Now, lets implement the GET {student} functionality.
+In the API Gateway -> Method Request, enable "Validate query string parameters and headers". So if you dont pass a value for student_id, error is thrown.
+In the API Gateway -> Intg Request, under Mapping Templates, add:
+{
+  "student_id" : "$input.params("student_id")"
+}
+Now, Test the API Gateway by passing a value for student_id (ex: 1) and checking if lambda student-get-function is getting triggered and the passed student_id is captured.
+Now, use boto3 to retrieve value from dynamodb and return to API Gateway.
+
+Now, lets implement the GET {class} functionality.
+In the API Gateway -> Method Request, enable "Validate query string parameters and headers". So if you dont pass a value for class, error is thrown.
+In the API Gateway -> Intg Request, under Mapping Templates, add:
+{
+  "class" : "$input.params("class")"
+}
+Now, Test the API Gateway by passing a value for class (ex: 7) and checking if lambda class-get-function is getting triggered and the passed class is captured.
+Now, use boto3 to retrieve value from dynamodb and return to API Gateway.
+Note that we need to query on Sort Key alone for this and for this we need to create a GSI on class.
+Then query by passing the GSI index name + KeyConditionExpression.
+
+======================================================== Presentation Tier ======================================================
+
+Visual Studio Code Editor:
+
+C:\Vinod\Angular2024>ng new student-app -> Say y for routing & select CSS for styling.
+
+cd student-app
+
+ng serve -o
+
+browser -> localhost:4200
+
+Remove everything except <router-outlet></router-outlet> in app.component.html & add <div class="container"></div>
+
+<div class="container">
+  <router-outlet></router-outlet>
+</div>
+
+
+Ctrl+C to stop the service
+
+==========================================
+
+ng generate module home
+
+ng generate component home --module=home
+
+This component, as per our design above, should have username text / password text / login button.
+
+Then update app.module.ts -> import required modules like HomeModule, HttpClientModule on top of existing ones
+
+Then update app-routing.module.ts -> add path - route. for ex: path: "", component: HomeComponent
+
+Then update home.module.ts to have Forms related modules so that form can be built in home component
+
+Then update home.component.ts with onInit and onSubmit code
+
+Then update home.component.html
+
+Make CSS changes for styling:
+
+npm install bootstrap@5.3
+
+In styles.css, add @import "~bootstrap/dist/css/bootstrap.min.css"
+
+ng serve -o and see if the page is showing up / working as expected.
+
+When you provide username, password and submit the form, after alert message you should be taken to another page that has 3 options - Add student, Get student details, Get class details
+
+So lets create a new component called options:
+
+ng generate component options --module=home
+
+Then update app-routing.module.ts -> add path - route. path: "options", component: OptionsComponent
+
+At this point, test the page to see if redirection to OptionsComponent happens after the alert message (ng serve -o)
+
+Now, in our next page, there is no single button but 3 buttons - one each for Add student, Get student details, Get class details
+
+So, instead of updating options.component.ts with onInit and onSubmit code, lets update options.component.html with 3 buttons. Verify the page.
+
+When you hit the Add student button, you should be taken to the page/component with Add Student form
+When you hit the Get student button, you should be taken to the page/component with Get Student form
+When you hit the Get class button, you should be taken to the page/component with Get class form
+So lets create a module for all these forms and create components as well 
+ng generate module mlforms
+ng generate component add-student-form --module=mlforms
+ng generate component get-student-form --module=mlforms
+ng generate component get-class-form --module=mlforms
+Note: You could create all these componets in home module itself instead of creating another new mlforms module
+
+Then update app.module.ts to import MlFormsModule.
+
+Then update mlforms.module.ts - import FormsModule, ReactiveFormsModule, RouterModule so that you can work with forms in the components using this module. 
+Also, import HomeModule so that you can include the home page/component if needed, in all the components using this module.
+
+Then update app-routing.module.ts -> add paths - routes for the various forms:
+{path: "add-student-details", component: AddStudentFormComponent},
+{path: "get-student-details", component: GetStudentFormComponent},
+{path: "get-class-details", component: GetClassFormComponent}
+Note that the paths in app-routing.module.ts must be the same as what is provided in options.component.html page.
+Verify.
+
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Work on the Add Student part now.
+
+Update add-student-form.component.ts to implement onInit() and onSubmit() methods.
+onInit should include all form details.
+onSubmit can be dummy alert message initially.
+
+Then update add-student-form.component.html with all labels / texts/ button.
+
+Verify.
+
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Work on the Get Student part now.
+
+Update get-student-form.component.ts to implement onInit() and onSubmit() methods.
+onInit should include all form details.
+onSubmit can be dummy alert message initially.
+
+Then update get-student-form.component.html with all labels / texts/ button.
+
+Verify.
+
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Work on the Get Class part now.
+
+Update get-class-form.component.ts to implement onInit() and onSubmit() methods.
+onInit should include all form details.
+onSubmit can be dummy alert message initially.
+
+Then update get-class-form.component.html with all labels / texts/ button.
+
+Verify.
+
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now time to hookup Frontend i.e. the Presentation tier with API i.e. the Application layer.
+
+ng generate service mlforms/student-service
+
+ng generate interface models/student-model
+
+Update the Student model - student-model.ts - with only the fields from the Frontend. No calculated fields here.
+
+ng generate interface models/student-calc-model
+
+Update the Student model - student-calc-model.ts - with both fields from the Frontend and calculated fields.
+
+Now time to update the student-service.service.ts. Before that, in AWS Console, make sure to enable CORS and copy all URLs into student-service.service.ts.
+
+Add the addstudent, getStudent, getClass methods using the above URLs.
+
+---------- Update the form components to call the above methods & Verify ---------------------------
+
+In add-student-form.component.ts -> onSubmit() section, invoke the addStudent method created in the student-service. Verify dynamodb.
+Modify lambda to calculate average score and store this as well in DynamoDB.
+
+In get-student-form.component.ts -> onSubmit() section, invoke the getStudent method created in the student-service. 
+In get-student-form.component.html -> below the form, add a table that will hold returned values.
+Modify lambda to return student details as 'body': final-message-body
+In API Gateway -> GET -> student_id -> Integration reponse: add $input.json('$.body') to segregate the actual values that need to be displayed in the front-end.
+Verify.
+
+In get-class-form.component.ts -> onSubmit() section, invoke the getClass method created in the student-service. 
+In get-class-form.component.html -> below the form, add a table that will hold returned values.
+Modify lambda to return student list details as 'body': final-message-body
+In API Gateway -> GET -> class -> Integration reponse: add $input.json('$.body') to segregate the actual values that need to be displayed in the front-end.
+Verify.
+
+
+---------------------------------------------------------------------------------------------------------
+
+Now, i want to add the options - Add Student, Get Student, Get Class - at the top of every form.
+
+OptionsComponent is part of HomeModule. So, in home.module.ts, export OptionsComponent and then this Component becomes available in all other components,
+In add-student-form.component.html, get-student-form.component.html, get-class-form.component.html add <app-options></app-options> at the top.
+Verify.
+
+---------------------------------------------------------------------------------------------------------
+
+Now time to host the web app publicly.
+
+In AWS Console, Create an S3 bucket - student-app-vinod. Uncheck "Block Public Access". Edit the Bucket Policy and put in: 
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicRead",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::studentapp-vinod/*"
+        }
+    ]
+}
+
+Enable static web hosting.
+
+Go back to your local machine where the angular app was built. Execute ng-build:
+C:\Vinod\Angular2024\student-app>ng build
+
+dist folder should get created in C:\Vinod\Angular2024\student-app
+
+Copy the files under "dist" into student-app-vinod S3 bucket.
+
+Copy the bucket website endpoint into the browser and verify the behaviour of the app is the same as during local testing.
+
