@@ -1,0 +1,46 @@
+<app-options></app-options>
+
+<form [formGroup]="getClassForm" (ngSubmit)="onSubmit()">
+
+    <div class="col">
+        <label class="form-label">Class:</label>
+        <input class="form-control" type="number" formControlName="class">
+        <small class="text-danger" *ngIf="getClassForm.get('class')?.invalid && getClassForm.get('class')?.touched">
+            Please enter a valid class
+        </small>
+    </div>
+
+    <br>
+
+    <button class="btn btn-primary" type="submit" [disabled]="getClassForm.invalid">Submit</button>
+
+</form>
+
+<br>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Student ID:</th>
+            <th>Class:</th>
+            <th>Test1 Score:</th>
+            <th>Test2 Score:</th>
+            <th>Test3 Score:</th>
+            <th>Test4 Score:</th>
+            <th>Test5 Score:</th>
+            <th>Average Score:</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let student of classStudents">
+            <td>{{student.student_id}}</td>
+            <td>{{student.class}}</td>
+            <td>{{student.test1_score}}</td>
+            <td>{{student.test2_score}}</td>
+            <td>{{student.test3_score}}</td>
+            <td>{{student.test4_score}}</td>
+            <td>{{student.test5_score}}</td>
+            <td>{{student.avg_score}}</td>
+        </tr>
+   </tbody>
+</table>

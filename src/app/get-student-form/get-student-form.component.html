@@ -1,0 +1,48 @@
+<app-options></app-options>
+
+<form [formGroup]="getStudentForm" (ngSubmit)="onSubmit()">
+
+    <div class="col">
+        <label class="form-label">Student ID:</label>
+        <input class="form-control" type="number" formControlName="student_id">
+        <small class="text-danger" *ngIf="getStudentForm.get('student_id')?.invalid && getStudentForm.get('student_id')?.touched">
+            Please enter a valid Student ID
+        </small>
+    </div>
+    
+    <br>
+
+    <button class="btn btn-primary" type="submit" [disabled]="getStudentForm.invalid">Submit</button>
+
+</form>
+
+<br>
+
+<table class="table table-striped" *ngIf="requestedStudent.student_id != 0 && requestedStudent; else noRecord">
+    <thead>
+        <tr>
+            <th>Student ID:</th>
+            <th>Class:</th>
+            <th>Test1 Score:</th>
+            <th>Test2 Score:</th>
+            <th>Test3 Score:</th>
+            <th>Test4 Score:</th>
+            <th>Test5 Score:</th>
+            <th>Average Score:</th>
+        </tr>
+    </thead>
+    <tbody>
+        <td>{{requestedStudent.student_id}}</td>
+        <td>{{requestedStudent.class}}</td>
+        <td>{{requestedStudent.test1_score}}</td>
+        <td>{{requestedStudent.test2_score}}</td>
+        <td>{{requestedStudent.test3_score}}</td>
+        <td>{{requestedStudent.test4_score}}</td>
+        <td>{{requestedStudent.test5_score}}</td>
+        <td>{{requestedStudent.avg_score}}</td>
+    </tbody>
+</table>
+
+<ng-template #noRecord>
+    <p>No record available.</p>
+</ng-template>

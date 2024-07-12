@@ -1,0 +1,63 @@
+<app-options></app-options>
+
+<form [formGroup]="addStudentForm" (ngSubmit)="onSubmit()">
+
+    <div class="row mb-3">
+        <div class="col">
+            <label class="form-label">Student ID:</label>
+            <input class="form-control" type="number" formControlName="student_id">
+            <small class="text-danger" *ngIf="addStudentForm.get('student_id')?.invalid && addStudentForm.get('student_id')?.touched">
+                Please enter a valid Student ID
+            </small>
+        </div>
+        <div class="col">
+            <label class="form-label">Class:</label>
+            <input class="form-control" type="number" formControlName="class">
+            <small class="text-danger" *ngIf="addStudentForm.get('class')?.invalid && addStudentForm.get('class')?.touched">
+                Please enter a valid Class
+            </small>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col">
+            <label class="form-label">Test 1 Score:</label>
+            <input class="form-control" type="number" formControlName="test1_score">
+            <small class="text-danger" *ngIf="addStudentForm.get('test1_score')?.invalid && addStudentForm.get('test1_score')?.touched">
+                Please enter a valid Test 1 Score
+            </small>
+        </div>
+        <div class="col">
+            <label class="form-label">Test 2 Score:</label>
+            <input class="form-control" type="number" formControlName="test2_score">
+            <small class="text-danger" *ngIf="addStudentForm.get('test2_score')?.invalid && addStudentForm.get('test2_score')?.touched">
+                Please enter a valid Test 2 Score
+            </small>
+        </div>
+        <div class="col">
+            <label class="form-label">Test 3 Score:</label>
+            <input class="form-control" type="number" formControlName="test3_score">
+            <small class="text-danger" *ngIf="addStudentForm.get('test3_score')?.invalid && addStudentForm.get('test3_score')?.touched">
+                Please enter a valid Test 3 Score
+            </small>
+        </div>
+        <div class="col">
+            <label class="form-label">Test 4 Score:</label>
+            <input class="form-control" type="number" formControlName="test4_score">
+            <small class="text-danger" *ngIf="addStudentForm.get('test4_score')?.invalid && addStudentForm.get('test4_score')?.touched">
+                Please enter a valid Test 4 Score
+            </small>
+        </div>
+        <div class="col">
+            <label class="form-label">Test 5 Score:</label>
+            <input class="form-control" type="number" formControlName="test5_score">
+            <small class="text-danger" *ngIf="addStudentForm.get('test5_score')?.invalid && addStudentForm.get('test5_score')?.touched">
+                Please enter a valid Test 5 Score
+            </small>
+        </div>
+
+    </div>
+
+    <button class="btn btn-primary" type="submit" [disabled]="addStudentForm.invalid">Submit</button>
+
+</form>
